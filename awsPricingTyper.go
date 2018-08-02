@@ -176,6 +176,8 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 								var newPDItem priceDimensionItem
 								for pdiK, pdiV := range pdV.(map[string]interface{}) {
 									switch pdiK {
+									default:
+										err = fmt.Errorf("got unexpected price dimension field: %+v", pdiK)
 									case "unit":
 										newPDItem.unit = pdiV.(string)
 									case "pricePerUnit":
@@ -189,6 +191,8 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 											pricePerUnit[pdiKu] = pdiKvFloat
 											newPDItem.pricePerUnit = append(newPDItem.pricePerUnit, pricePerUnit)
 										}
+									case "appliesTo":
+										newPDItem.appliesTo = pdiV.(string)
 									case "endRange":
 										newPDItem.endRange = pdiV.(string)
 									case "description":
@@ -250,6 +254,8 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm
 								var newPDItem priceDimensionItem
 								for pdiK, pdiV := range pdV.(map[string]interface{}) {
 									switch pdiK {
+									default:
+										err = fmt.Errorf("got unexpected price dimension field: %+v", pdiK)
 									case "unit":
 										newPDItem.unit = pdiV.(string)
 									case "pricePerUnit":
@@ -271,6 +277,8 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm
 										newPDItem.rateCode = pdiV.(string)
 									case "beginRange":
 										newPDItem.beginRange = pdiV.(string)
+									case "appliesTo":
+										newPDItem.appliesTo = pdiV.(string)
 									}
 									newPriceDimension[pdK] = newPDItem
 								}
@@ -334,6 +342,7 @@ type priceDimensionItem struct {
 	description  string
 	rateCode     string
 	beginRange   string
+	appliesTo    string
 }
 
 type priceDimension map[string]priceDimensionItem
