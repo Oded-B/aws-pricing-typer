@@ -122,10 +122,10 @@ func processProduct(v interface{}) (newProduct product, err error) {
 						newProduct.Attributes.UsageType = val
 					case "location":
 						newProduct.Attributes.Location = val
+					default:
+						err = fmt.Errorf("unexpected attribute: %+v", k2)
+						return
 					}
-				default:
-					err = fmt.Errorf("unexpected value for: %+v", k2)
-					return
 				}
 			}
 		}
@@ -192,7 +192,12 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 											newPDItem.pricePerUnit = append(newPDItem.pricePerUnit, pricePerUnit)
 										}
 									case "appliesTo":
-										newPDItem.appliesTo = pdiV.(string)
+										switch pdiV.(type) {
+										case map[string]interface{}:
+											//TODO: work out what to do with it
+										default:
+											err = fmt.Errorf("unexpected type for appliesTo: %+v", pdiV)
+										}
 									case "endRange":
 										newPDItem.endRange = pdiV.(string)
 									case "description":
@@ -278,7 +283,14 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm
 									case "beginRange":
 										newPDItem.beginRange = pdiV.(string)
 									case "appliesTo":
-										newPDItem.appliesTo = pdiV.(string)
+										switch pdiV.(type) {
+										case map[string]interface{}:
+											//TODO: work out what to do with it
+										default:
+											err = fmt.Errorf("unexpected type for appliesTo: %+v", pdiV)
+											return nil, err
+										}
+
 									}
 									newPriceDimension[pdK] = newPDItem
 								}
@@ -299,9 +311,7 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm
 func processTerms(doc *PricingDocument, v interface{}) error {
 	for k1, v1 := range v.(map[string]interface{}) {
 		switch v1.(type) {
-		case string:
-			return fmt.Errorf("did not expect value: %+v", v1)
-		default:
+		case map[string]interface{}:
 			switch k1 {
 			case "OnDemand":
 				result, err := processOnDemandTerms(v1)
@@ -315,7 +325,10 @@ func processTerms(doc *PricingDocument, v interface{}) error {
 					return err
 				}
 				doc.Terms.Reserved = result
+
 			}
+		default:
+			return fmt.Errorf("did not expect value: %+v", v1)
 		}
 	}
 	return nil
@@ -342,7 +355,7 @@ type priceDimensionItem struct {
 	description  string
 	rateCode     string
 	beginRange   string
-	appliesTo    string
+	appliesTo    interface{}
 }
 
 type priceDimension map[string]priceDimensionItem
