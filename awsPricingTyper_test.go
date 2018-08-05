@@ -72,17 +72,17 @@ func getMockProduct() (output map[string]interface{}) {
 
 func getMockTerms() map[string]interface{} {
 
-	var mockReservedAppliesTo interface{}
+	var mockReservedAppliesToReserved interface{}
 	if mockTermsFailure == "unexpectedTypeForAppliesToReserved" {
-		mockReservedAppliesTo = "bad type"
+		mockReservedAppliesToReserved = "bad type"
 	} else {
-		mockReservedAppliesTo = make(map[string]interface{})
+		mockReservedAppliesToReserved = []interface{}{}
 	}
-	var mockOnDemandAppliesTo interface{}
+	var mockOnDemandAppliesToOnDemand interface{}
 	if mockTermsFailure == "unexpectedTypeForAppliesToOnDemand" {
-		mockOnDemandAppliesTo = "bad type"
+		mockOnDemandAppliesToOnDemand = "bad type"
 	} else {
-		mockOnDemandAppliesTo = make(map[string]interface{})
+		mockOnDemandAppliesToOnDemand = []interface{}{}
 	}
 
 	terms := make(map[string]interface{})
@@ -102,7 +102,7 @@ func getMockTerms() map[string]interface{} {
 	onDemandPriceDimensionOne["endRange"] = "Inf"
 	onDemandPriceDimensionOne["description"] = "$0.111 per On Demand Linux m4.large Instance Hour"
 	onDemandPriceDimensionOne["endRange"] = "Inf"
-	onDemandPriceDimensionOne["appliesTo"] = mockOnDemandAppliesTo
+	onDemandPriceDimensionOne["appliesTo"] = mockOnDemandAppliesToOnDemand
 	onDemandPriceDimensionOne["rateCode"] = "7X4K64YA59VZZAC3.JRTCKXETXF.6YS6EN2CT7"
 	onDemandPriceDimensionOne["beginRange"] = "0"
 	onDemandPriceDimensions["ABCDEFGHIJK.LMNOPQRST.UVWXYZ"] = onDemandPriceDimensionOne
@@ -128,7 +128,7 @@ func getMockTerms() map[string]interface{} {
 	reservedPriceDimensionOne["endRange"] = "Inf"
 	reservedPriceDimensionOne["description"] = "Linux/UNIX (Amazon VPC), m4.large reserved instance applied"
 	reservedPriceDimensionOne["endRange"] = "Inf"
-	reservedPriceDimensionOne["appliesTo"] = mockReservedAppliesTo
+	reservedPriceDimensionOne["appliesTo"] = mockReservedAppliesToReserved
 	reservedPriceDimensionOne["rateCode"] = "7X4K64YA59VZZAC3.4NA7Y494T4.6YS6EN2CT7"
 	reservedPriceDimensionOne["beginRange"] = "0"
 	reservedPriceDimensions["7X4K64YA59VZZAC3.4NA7Y494T4.6YS6EN2CT7"] = reservedPriceDimensionOne

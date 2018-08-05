@@ -194,9 +194,12 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 									case "appliesTo":
 										switch pdiV.(type) {
 										case map[string]interface{}:
-											//TODO: work out what to do with it
+											// TODO: work out what to do with it
+										case []interface{}:
+											// TODO: work out what to do with it
 										default:
 											err = fmt.Errorf("unexpected type for appliesTo: %+v", pdiV)
+											return
 										}
 									case "endRange":
 										newPDItem.endRange = pdiV.(string)
@@ -284,8 +287,8 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm
 										newPDItem.beginRange = pdiV.(string)
 									case "appliesTo":
 										switch pdiV.(type) {
-										case map[string]interface{}:
-											//TODO: work out what to do with it
+										case []interface{}:
+											// TODO: work out what to do with it
 										default:
 											err = fmt.Errorf("unexpected type for appliesTo: %+v", pdiV)
 											return nil, err
