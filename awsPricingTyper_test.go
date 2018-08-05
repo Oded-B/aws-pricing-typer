@@ -159,14 +159,11 @@ func getMockPriceList(product, terms map[string]interface{}) map[string]interfac
 // working client
 func (m *mockPricingClient) GetProducts(input *pricing.GetProductsInput) (*pricing.GetProductsOutput, error) {
 	// get mock products
-	var product map[string]interface{}
-	product = getMockProduct()
+	product := getMockProduct()
 	// get mock terms
-	var terms map[string]interface{}
-	terms = getMockTerms()
+	terms := getMockTerms()
 	// get mock pricelist
-	var plMap map[string]interface{}
-	plMap = getMockPriceList(product, terms)
+	plMap := getMockPriceList(product, terms)
 
 	output := pricing.GetProductsOutput{
 		FormatVersion: getStrPtr("aws_v1"),

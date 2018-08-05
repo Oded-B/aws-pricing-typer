@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/pricing"
 )
 
+// GetTypedPricingData takes the raw output from the AWS API and returns typed data in structs
 func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingData []PricingDocument, err error) {
 	type JSONValue map[string]interface{}
 	for _, item := range getProductsOutput.PriceList {
@@ -227,10 +228,10 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 	return
 }
 
-func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm, err error) {
-	onDemandTerms = make(map[string]OnDemandTerm)
+func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm, err error) {
+	onDemandTerms = make(map[string]onDemandTerm)
 	for k2, v2 := range v1.(map[string]interface{}) {
-		var newOnDemandTerm OnDemandTerm
+		var newOnDemandTerm onDemandTerm
 		switch v2.(type) {
 		case string:
 			err = fmt.Errorf("unexpected item: %+v %+v", k2, v2)
@@ -337,15 +338,15 @@ func processTerms(doc *PricingDocument, v interface{}) error {
 	return nil
 }
 
-type onDemandTermAttributes struct {
-	// empty
-}
+//type onDemandTermAttributes struct {
+//	// empty
+//}
 
-type OnDemandTerm struct {
-	sku             string
-	effectiveDate   string
-	offerTermCode   string
-	termAttributes  onDemandTermAttributes
+type onDemandTerm struct {
+	sku           string
+	effectiveDate string
+	offerTermCode string
+	//termAttributes  onDemandTermAttributes
 	priceDimensions []priceDimension
 }
 
@@ -358,7 +359,7 @@ type priceDimensionItem struct {
 	description  string
 	rateCode     string
 	beginRange   string
-	appliesTo    interface{}
+	//appliesTo    interface{}
 }
 
 type priceDimension map[string]priceDimensionItem
@@ -408,6 +409,8 @@ type product struct {
 	}
 }
 
+// PricingDocument is a structure for each of the returned slice items
+// representing each resulting product and it's accompanying pricing detail
 type PricingDocument struct {
 	PublicationDate string
 	SKU             string
@@ -415,7 +418,7 @@ type PricingDocument struct {
 	Version         string
 	Products        []product
 	Terms           struct {
-		OnDemand map[string]OnDemandTerm
+		OnDemand map[string]onDemandTerm
 		Reserved map[string]reservedTerm
 	}
 }
