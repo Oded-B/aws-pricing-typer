@@ -13,7 +13,12 @@ type mockPricingClient struct {
 }
 
 // flag which item to fail on for price list (top-level) of input
-var mockPriceListFailure string
+var mockPriceListFailureItem bool
+var mockPriceListFailureItemProduct bool
+var mockPriceListFailureStringType bool
+var mockPriceListFailureMapType bool
+var mockPriceListFailureFloatType bool
+var mockPriceListUnexpectedItem bool
 
 // flag which item to fail on for product of input
 var mockProductFailure string
@@ -140,6 +145,7 @@ func getMockTerms() map[string]interface{} {
 	} else {
 		terms["Reserved"] = reservedTerms
 	}
+
 	return terms
 }
 
@@ -150,8 +156,26 @@ func getMockPriceList(product, terms map[string]interface{}) map[string]interfac
 	priceList["serviceCode"] = "AmazonEC2"
 	priceList["terms"] = terms
 	priceList["product"] = product
-	if mockPriceListFailure == "unimplementedPriceListItem" {
+	if mockPriceListUnexpectedItem {
+		priceList["invalid"] = "invalid"
+	}
+	if mockPriceListFailureItem {
+		priceList["invalid"] = product
+	}
+	if mockPriceListFailureMapType {
+		value := make(map[string]interface{})
+		priceList["badItem"] = value
+	}
+	if mockPriceListFailureStringType {
 		priceList["badItem"] = "invalid"
+	}
+	if mockPriceListFailureFloatType {
+		priceList["product"] = 0.1
+	}
+	if mockPriceListFailureItemProduct {
+		value := make(map[string]interface{})
+		value["invalid"] = "invalid"
+		priceList["product"] = value
 	}
 	return priceList
 }
@@ -211,9 +235,9 @@ func TestTyperWithUnimplementedProductFamily(t *testing.T) {
 
 }
 
-// client failing with unimplemented price list failure item
-func TestTyperWithUnimplementedPriceListItem(t *testing.T) {
-	mockPriceListFailure = "unimplementedPriceListItem"
+// client failing with unimplemented price list item
+func TestTyperWithUnexpectedPriceListItem(t *testing.T) {
+	mockPriceListUnexpectedItem = true
 	mockSvc := &mockPricingClient{}
 	getProductsInput := pricing.GetProductsInput{}
 	var getProductsOutput *pricing.GetProductsOutput
@@ -226,6 +250,72 @@ func TestTyperWithUnimplementedPriceListItem(t *testing.T) {
 		t.Errorf("expected bad price list item error: %+v", getDataErr)
 	}
 
+}
+
+// client failing with unimplemented price list item
+func TestTyperWithUnimplementedPriceListItem(t *testing.T) {
+	mockPriceListFailureItem = true
+	mockSvc := &mockPricingClient{}
+	getProductsInput := pricing.GetProductsInput{}
+	var getProductsOutput *pricing.GetProductsOutput
+	getProductsOutput, getProductsErr := mockSvc.GetProducts(&getProductsInput)
+	if getProductsErr != nil {
+		t.Errorf("got unexpected error: %+v", getProductsErr)
+	}
+	_, getDataErr := GetTypedPricingData(*getProductsOutput)
+	if getDataErr == nil {
+		t.Errorf("expected bad price list item error: %+v", getDataErr)
+	}
+
+}
+
+// client failing with unimplemented price list failure item (string)
+func TestTyperWithUnimplementedPriceListItemString(t *testing.T) {
+	mockPriceListFailureStringType = true
+	mockSvc := &mockPricingClient{}
+	getProductsInput := pricing.GetProductsInput{}
+	var getProductsOutput *pricing.GetProductsOutput
+	getProductsOutput, getProductsErr := mockSvc.GetProducts(&getProductsInput)
+	if getProductsErr != nil {
+		t.Errorf("got unexpected error: %+v", getProductsErr)
+	}
+	_, getDataErr := GetTypedPricingData(*getProductsOutput)
+	if getDataErr == nil {
+		t.Errorf("expected bad price list item error: %+v", getDataErr)
+	}
+
+}
+
+// client failing with unimplemented price list failure item (map)
+func TestTyperWithUnimplementedPriceListItemMap(t *testing.T) {
+	mockPriceListFailureMapType = true
+	mockSvc := &mockPricingClient{}
+	getProductsInput := pricing.GetProductsInput{}
+	var getProductsOutput *pricing.GetProductsOutput
+	getProductsOutput, getProductsErr := mockSvc.GetProducts(&getProductsInput)
+	if getProductsErr != nil {
+		t.Errorf("got unexpected error: %+v", getProductsErr)
+	}
+	_, getDataErr := GetTypedPricingData(*getProductsOutput)
+	if getDataErr == nil {
+		t.Errorf("expected bad price list item error: %+v", getDataErr)
+	}
+}
+
+// client failing with unimplemented price list failure item (float)
+func TestTyperWithUnimplementedPriceListItemFloat(t *testing.T) {
+	mockPriceListFailureFloatType = true
+	mockSvc := &mockPricingClient{}
+	getProductsInput := pricing.GetProductsInput{}
+	var getProductsOutput *pricing.GetProductsOutput
+	getProductsOutput, getProductsErr := mockSvc.GetProducts(&getProductsInput)
+	if getProductsErr != nil {
+		t.Errorf("got unexpected error: %+v", getProductsErr)
+	}
+	_, getDataErr := GetTypedPricingData(*getProductsOutput)
+	if getDataErr == nil {
+		t.Errorf("expected bad price list item error: %+v", getDataErr)
+	}
 }
 
 // client failing with unimplemented price list failure item
@@ -242,7 +332,22 @@ func TestTyperWithUnimplementedProductItem(t *testing.T) {
 	if getDataErr == nil {
 		t.Errorf("expected unimplemented product item error: %+v", getDataErr)
 	}
+}
 
+// client failing with unimplemented price list product item
+func TestTyperWithBadProductItem(t *testing.T) {
+	mockPriceListFailureItemProduct = true
+	mockSvc := &mockPricingClient{}
+	getProductsInput := pricing.GetProductsInput{}
+	var getProductsOutput *pricing.GetProductsOutput
+	getProductsOutput, getProductsErr := mockSvc.GetProducts(&getProductsInput)
+	if getProductsErr != nil {
+		t.Errorf("got unexpected error: %+v", getProductsErr)
+	}
+	_, getDataErr := GetTypedPricingData(*getProductsOutput)
+	if getDataErr == nil {
+		t.Errorf("expected unimplemented product item error: %+v", getDataErr)
+	}
 }
 
 // client failing with unimplemented product attribute

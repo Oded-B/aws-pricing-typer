@@ -26,13 +26,13 @@ func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingDa
 					err = fmt.Errorf("unexpected price list item: %+v", k)
 					return
 				}
-			default:
+			case map[string]interface{}:
 				switch k {
 				case "product":
 					var result product
 					result, err = processProduct(v)
 					if err != nil {
-						return
+						return nil, err
 					}
 					pDoc.Products = append(pDoc.Products, result)
 				case "terms":
@@ -44,11 +44,13 @@ func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingDa
 				default:
 					return nil, fmt.Errorf("unexpected price list item: %+v", k)
 				}
+			default:
+				return nil, fmt.Errorf("unexpected type: %+v", val)
 			}
 		}
 		pricingData = append(pricingData, pDoc)
 	}
-	return pricingData, nil
+	return pricingData, err
 }
 
 func processProduct(v interface{}) (newProduct product, err error) {
@@ -66,7 +68,7 @@ func processProduct(v interface{}) (newProduct product, err error) {
 			default:
 				err = fmt.Errorf("unexpected field: %+v", k1)
 			}
-		default:
+		case map[string]interface{}:
 			for k2, v2 := range v1.(map[string]interface{}) {
 				switch val := v2.(type) {
 				case string:
@@ -129,6 +131,9 @@ func processProduct(v interface{}) (newProduct product, err error) {
 					}
 				}
 			}
+		default:
+			err = fmt.Errorf("bad type: %+v", val)
+			return
 		}
 	}
 	return
