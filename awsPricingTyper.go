@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"reflect"
+
 	"github.com/aws/aws-sdk-go/service/pricing"
+	"github.com/jonhadfield/ape/helpers"
 )
 
 // GetTypedPricingData takes the raw output from the AWS API and returns typed data in structs
@@ -29,12 +32,12 @@ func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingDa
 			case map[string]interface{}:
 				switch k {
 				case "product":
-					var result product
+					var result Product
 					result, err = processProduct(v)
 					if err != nil {
 						return nil, err
 					}
-					pDoc.Products = append(pDoc.Products, result)
+					pDoc.Product = result
 				case "terms":
 					proTermsErr := processTerms(&pDoc, v)
 					if proTermsErr != nil {
@@ -53,13 +56,14 @@ func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingDa
 	return pricingData, err
 }
 
-func processProduct(v interface{}) (newProduct product, err error) {
+func processProduct(v interface{}) (newProduct Product, err error) {
 	for k1, v1 := range v.(map[string]interface{}) {
 		switch val := v1.(type) {
 		case string:
 			switch k1 {
 			case "productFamily":
-				if val != "Compute Instance" {
+				validProductFamilies := []string{"Dedicated Host", "Compute Instance"}
+				if !helpers.StringInSlice(val, validProductFamilies) {
 					continue
 				}
 				newProduct.ProductFamily = val
@@ -71,12 +75,35 @@ func processProduct(v interface{}) (newProduct product, err error) {
 		case map[string]interface{}:
 			for k2, v2 := range v1.(map[string]interface{}) {
 				switch val := v2.(type) {
+				case int64:
+					switch k2 {
+
+					}
 				case string:
 					switch k2 {
+					case "physicalCores":
+						newProduct.Attributes.PhysicalCores = val
+					case "instanceCapacity4xlarge":
+						newProduct.Attributes.InstanceCapacity4xlarge = val
+					case "instanceCapacity10xlarge":
+						newProduct.Attributes.InstanceCapacity10xlarge = val
+					case "instanceCapacity16xlarge":
+						newProduct.Attributes.InstanceCapacity16xlarge = val
+
+					case "instanceCapacity2xlarge":
+						newProduct.Attributes.InstanceCapacity2xlarge = val
+					case "instanceCapacityXlarge":
+						newProduct.Attributes.InstanceCapacityXlarge = val
+					case "instanceCapacity8xlarge":
+						newProduct.Attributes.InstanceCapacity8xlarge = val
+					case "instanceCapacityLarge":
+						newProduct.Attributes.InstanceCapacityLarge = val
 					case "networkPerformance":
 						newProduct.Attributes.NetworkPerformance = val
 					case "vcpu":
 						newProduct.Attributes.VCPU = val
+					case "gpu":
+						newProduct.Attributes.GPU = val
 					case "capacitystatus":
 						newProduct.Attributes.CapacityStatus = val
 					case "operatingSystem":
@@ -126,7 +153,7 @@ func processProduct(v interface{}) (newProduct product, err error) {
 					case "location":
 						newProduct.Attributes.Location = val
 					default:
-						err = fmt.Errorf("unexpected attribute: %+v", k2)
+						err = fmt.Errorf("unexpected attribute: %+v of type: %s", k2, reflect.TypeOf(k2))
 						return
 					}
 				}
@@ -139,10 +166,10 @@ func processProduct(v interface{}) (newProduct product, err error) {
 	return
 }
 
-func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm, err error) {
-	reservedTerms = make(map[string]reservedTerm)
+func processReservedTerms(v1 interface{}) (reservedTerms map[string]ReservedTerm, err error) {
+	reservedTerms = make(map[string]ReservedTerm)
 	for k2, v2 := range v1.(map[string]interface{}) {
-		var newReservedTerm reservedTerm
+		var newReservedTerm ReservedTerm
 		switch v2.(type) {
 		case string:
 			err = fmt.Errorf("unexpected item: %+v %+v", k2, v2)
@@ -153,39 +180,39 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 				case string:
 					switch k3 {
 					case "sku":
-						newReservedTerm.sku = val
+						newReservedTerm.SKU = val
 					case "offerTermCode":
-						newReservedTerm.offerTermCode = val
+						newReservedTerm.OfferTermCode = val
 					case "effectiveDate":
-						newReservedTerm.effectiveDate = val
+						newReservedTerm.EffectiveDate = val
 					}
 				default:
 					if k3 == "termAttributes" {
 						for k3ta, v3ta := range v3.(map[string]interface{}) {
 							switch k3ta {
 							case "LeaseContractLength":
-								newReservedTerm.termAttributes.LeaseContractLength = v3ta.(string)
+								newReservedTerm.TermAttributes.LeaseContractLength = v3ta.(string)
 							case "OfferingClass":
-								newReservedTerm.termAttributes.OfferingClass = v3ta.(string)
+								newReservedTerm.TermAttributes.OfferingClass = v3ta.(string)
 							case "PurchaseOption":
-								newReservedTerm.termAttributes.PurchaseOption = v3ta.(string)
+								newReservedTerm.TermAttributes.PurchaseOption = v3ta.(string)
 							}
 						}
 					} else if k3 == "priceDimensions" {
-						var newPriceDimensions []priceDimension
+						var newPriceDimensions []PriceDimension
 						for pdK, pdV := range v3.(map[string]interface{}) {
-							newPriceDimension := priceDimension{}
+							newPriceDimension := PriceDimension{}
 							switch val := pdV.(type) {
 							default:
 								err = fmt.Errorf("got unexpected price dimension value: %+v", val)
 							case map[string]interface{}:
-								var newPDItem priceDimensionItem
+								var newPDItem PriceDimensionItem
 								for pdiK, pdiV := range pdV.(map[string]interface{}) {
 									switch pdiK {
 									default:
 										err = fmt.Errorf("got unexpected price dimension field: %+v", pdiK)
 									case "unit":
-										newPDItem.unit = pdiV.(string)
+										newPDItem.Unit = pdiV.(string)
 									case "pricePerUnit":
 										for pdiKu, pdiKv := range pdiV.(map[string]interface{}) {
 											pricePerUnit := make(map[string]float64)
@@ -195,7 +222,7 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 												return nil, conErr
 											}
 											pricePerUnit[pdiKu] = pdiKvFloat
-											newPDItem.pricePerUnit = append(newPDItem.pricePerUnit, pricePerUnit)
+											newPDItem.PricePerUnit = append(newPDItem.PricePerUnit, pricePerUnit)
 										}
 									case "appliesTo":
 										switch pdiV.(type) {
@@ -208,19 +235,19 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 											return
 										}
 									case "endRange":
-										newPDItem.endRange = pdiV.(string)
+										newPDItem.EndRange = pdiV.(string)
 									case "description":
-										newPDItem.description = pdiV.(string)
+										newPDItem.Description = pdiV.(string)
 									case "rateCode":
-										newPDItem.rateCode = pdiV.(string)
+										newPDItem.RateCode = pdiV.(string)
 									case "beginRange":
-										newPDItem.beginRange = pdiV.(string)
+										newPDItem.BeginRange = pdiV.(string)
 									}
 									newPriceDimension[pdK] = newPDItem
 								}
 								newPriceDimensions = append(newPriceDimensions, newPriceDimension)
 							}
-							newReservedTerm.priceDimensions = newPriceDimensions
+							newReservedTerm.PriceDimensions = newPriceDimensions
 
 						}
 					}
@@ -233,10 +260,10 @@ func processReservedTerms(v1 interface{}) (reservedTerms map[string]reservedTerm
 	return
 }
 
-func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm, err error) {
-	onDemandTerms = make(map[string]onDemandTerm)
+func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]OnDemandTerm, err error) {
+	onDemandTerms = make(map[string]OnDemandTerm)
 	for k2, v2 := range v1.(map[string]interface{}) {
-		var newOnDemandTerm onDemandTerm
+		var newOnDemandTerm OnDemandTerm
 		switch v2.(type) {
 		case string:
 			err = fmt.Errorf("unexpected item: %+v %+v", k2, v2)
@@ -246,11 +273,11 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm
 				case string:
 					switch k3 {
 					case "sku":
-						newOnDemandTerm.sku = val
+						newOnDemandTerm.SKU = val
 					case "offerTermCode":
-						newOnDemandTerm.offerTermCode = val
+						newOnDemandTerm.OfferTermCode = val
 					case "effectiveDate":
-						newOnDemandTerm.effectiveDate = val
+						newOnDemandTerm.EffectiveDate = val
 					}
 				default:
 					if k3 == "termAttributes" {
@@ -258,20 +285,20 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm
 							err = fmt.Errorf("unexpected term attributes for OnDemand: %+v", val)
 						}
 					} else if k3 == "priceDimensions" {
-						var newPriceDimensions []priceDimension
+						var newPriceDimensions []PriceDimension
 						for pdK, pdV := range v3.(map[string]interface{}) {
-							newPriceDimension := priceDimension{}
+							newPriceDimension := PriceDimension{}
 							switch val := pdV.(type) {
 							default:
 								err = fmt.Errorf("got unexpected price dimension value: %+v", val)
 							case map[string]interface{}:
-								var newPDItem priceDimensionItem
+								var newPDItem PriceDimensionItem
 								for pdiK, pdiV := range pdV.(map[string]interface{}) {
 									switch pdiK {
 									default:
 										err = fmt.Errorf("got unexpected price dimension field: %+v", pdiK)
 									case "unit":
-										newPDItem.unit = pdiV.(string)
+										newPDItem.Unit = pdiV.(string)
 									case "pricePerUnit":
 										for pdiKu, pdiKv := range pdiV.(map[string]interface{}) {
 											pricePerUnit := make(map[string]float64)
@@ -281,16 +308,16 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm
 												return nil, conErr
 											}
 											pricePerUnit[pdiKu] = pdiKvFloat
-											newPDItem.pricePerUnit = append(newPDItem.pricePerUnit, pricePerUnit)
+											newPDItem.PricePerUnit = append(newPDItem.PricePerUnit, pricePerUnit)
 										}
 									case "endRange":
-										newPDItem.endRange = pdiV.(string)
+										newPDItem.EndRange = pdiV.(string)
 									case "description":
-										newPDItem.description = pdiV.(string)
+										newPDItem.Description = pdiV.(string)
 									case "rateCode":
-										newPDItem.rateCode = pdiV.(string)
+										newPDItem.RateCode = pdiV.(string)
 									case "beginRange":
-										newPDItem.beginRange = pdiV.(string)
+										newPDItem.BeginRange = pdiV.(string)
 									case "appliesTo":
 										switch pdiV.(type) {
 										case []interface{}:
@@ -305,7 +332,7 @@ func processOnDemandTerms(v1 interface{}) (onDemandTerms map[string]onDemandTerm
 								}
 								newPriceDimensions = append(newPriceDimensions, newPriceDimension)
 							}
-							newOnDemandTerm.priceDimensions = newPriceDimensions
+							newOnDemandTerm.PriceDimensions = newPriceDimensions
 
 						}
 					}
@@ -347,52 +374,61 @@ func processTerms(doc *PricingDocument, v interface{}) error {
 //	// empty
 //}
 
-type onDemandTerm struct {
-	sku           string
-	effectiveDate string
-	offerTermCode string
-	//termAttributes  onDemandTermAttributes
-	priceDimensions []priceDimension
+type OnDemandTerm struct {
+	SKU           string
+	EffectiveDate string
+	OfferTermCode string
+	//TermAttributes  OnDemandTermAttributes
+	PriceDimensions []PriceDimension
 }
 
-type pricePerUnit map[string]float64
+type PricePerUnit map[string]float64
 
-type priceDimensionItem struct {
-	pricePerUnit []pricePerUnit
-	unit         string
-	endRange     string
-	description  string
-	rateCode     string
-	beginRange   string
+type PriceDimensionItem struct {
+	PricePerUnit []PricePerUnit
+	Unit         string
+	EndRange     string
+	Description  string
+	RateCode     string
+	BeginRange   string
 	//appliesTo    interface{}
 }
 
-type priceDimension map[string]priceDimensionItem
+type PriceDimension map[string]PriceDimensionItem
 
-type reservedTerm struct {
-	sku            string
-	effectiveDate  string
-	offerTermCode  string
-	termAttributes struct {
+type ReservedTerm struct {
+	SKU            string
+	EffectiveDate  string
+	OfferTermCode  string
+	TermAttributes struct {
 		LeaseContractLength string
 		OfferingClass       string
 		PurchaseOption      string
 	}
-	priceDimensions []priceDimension
+	PriceDimensions []PriceDimension
 }
 
-type product struct {
+type Product struct {
 	ProductFamily string
 	SKU           string
 	Attributes    struct {
 		NetworkPerformance          string
 		VCPU                        string
+		GPU                         string
 		CapacityStatus              string
 		OperatingSystem             string
 		PhysicalProcessor           string
+		PhysicalCores               string
 		ECU                         string
 		PreInstalledSw              string
 		ProcessorArchitecture       string
+		InstanceCapacity10xlarge    string
+		InstanceCapacity16xlarge    string
+		InstanceCapacity2xlarge     string
+		InstanceCapacityXlarge      string
+		InstanceCapacityLarge       string
+		InstanceCapacity4xlarge     string
+		InstanceCapacity8xlarge     string
 		EnhancedNetworkingSupported string
 		Storage                     string
 		ClockSpeed                  string
@@ -421,9 +457,9 @@ type PricingDocument struct {
 	SKU             string
 	ServiceCode     string
 	Version         string
-	Products        []product
+	Product         Product
 	Terms           struct {
-		OnDemand map[string]onDemandTerm
-		Reserved map[string]reservedTerm
+		OnDemand map[string]OnDemandTerm
+		Reserved map[string]ReservedTerm
 	}
 }
