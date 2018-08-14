@@ -6,8 +6,9 @@ import (
 
 	"reflect"
 
+	"strings"
+
 	"github.com/aws/aws-sdk-go/service/pricing"
-	"github.com/jonhadfield/ape/helpers"
 )
 
 // GetTypedPricingData takes the raw output from the AWS API and returns typed data in structs
@@ -63,7 +64,7 @@ func processProduct(v interface{}) (newProduct Product, err error) {
 			switch k1 {
 			case "productFamily":
 				validProductFamilies := []string{"Dedicated Host", "Compute Instance"}
-				if !helpers.StringInSlice(val, validProductFamilies) {
+				if !stringInSlice(val, validProductFamilies, true) {
 					continue
 				}
 				newProduct.ProductFamily = val
@@ -462,4 +463,15 @@ type PricingDocument struct {
 		OnDemand map[string]OnDemandTerm
 		Reserved map[string]ReservedTerm
 	}
+}
+
+func stringInSlice(a string, list []string, caseInsensitive bool) bool {
+	for _, b := range list {
+		if caseInsensitive && strings.ToLower(b) == strings.ToLower(a) {
+			return true
+		} else if b == a {
+			return true
+		}
+	}
+	return false
 }
