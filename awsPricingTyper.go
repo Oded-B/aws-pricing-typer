@@ -52,9 +52,38 @@ func GetTypedPricingData(getProductsOutput pricing.GetProductsOutput) (pricingDa
 				return nil, fmt.Errorf("unexpected type: %+v", val)
 			}
 		}
+		// suppress bad onDemand documents
+		if !pDocHasValidOnDemandPricing(pDoc) {
+			continue
+		}
+
 		pricingData = append(pricingData, pDoc)
 	}
 	return pricingData, err
+}
+
+func pDocHasValidOnDemandPricing(doc PricingDocument) bool {
+	hasOnDemandPrice := false
+	if len(doc.Terms.OnDemand) == 1 {
+		for _, odTerm := range doc.Terms.OnDemand {
+			for _, pDim := range odTerm.PriceDimensions {
+				for _, v := range pDim {
+					for _, a := range v.PricePerUnit {
+						for _, price := range a {
+							if price > 0.00 {
+								hasOnDemandPrice = true
+							}
+						}
+					}
+				}
+			}
+
+		}
+	}
+	if hasOnDemandPrice {
+		return true
+	}
+	return false
 }
 
 func processProduct(v interface{}) (newProduct Product, err error) {
