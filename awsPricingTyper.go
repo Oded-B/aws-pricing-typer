@@ -170,6 +170,12 @@ func processProduct(v interface{}) (newProduct Product, err error) {
 						newProduct.Attributes.NormalizationSizeFactor = val
 					case "processorFeatures":
 						newProduct.Attributes.ProcessorFeatures = val
+					case "intelAvxAvailable":
+						newProduct.Attributes.IntelAvxAvailable = val
+					case "intelAvx2Available":
+						newProduct.Attributes.IntelAvx2Available = val
+					case "intelTurboAvailable":
+						newProduct.Attributes.IntelTurboAvailable = val
 					case "operation":
 						newProduct.Attributes.Operation = val
 					case "memory":
@@ -471,6 +477,9 @@ type Product struct {
 		InstanceType                string
 		NormalizationSizeFactor     string
 		ProcessorFeatures           string
+		IntelAvxAvailable           string
+		IntelAvx2Available          string
+		IntelTurboAvailable         string
 		Operation                   string
 		Memory                      string
 		LocationType                string
